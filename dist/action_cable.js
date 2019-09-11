@@ -220,8 +220,15 @@
 
     Connection.prototype.open = function() {
       if (this.isActive()) {
-        ActionCable.log("Attempted to open WebSocket, but existing socket is " + (this.getState()));
-        throw new Error("Existing connection must be closed before opening");
+        try {
+          return this.close();
+        } catch (error1) {
+          error = error1;
+          return ActionCable.log("Failed to reopen WebSocket", error);
+        } finally {
+          ActionCable.log("Reopening WebSocket in " + this.constructor.reopenDelay + "ms");
+          setTimeout(this.open, this.constructor.reopenDelay);
+        }
       } else {
         ActionCable.log("Opening WebSocket, current state is " + (this.getState()) + ", subprotocols: " + protocols);
         if (this.webSocket != null) {
